@@ -1,4 +1,7 @@
 #include "tasksys.h"
+#include "itasksys.h"
+#include <memory>
+#include <thread>
 
 
 IRunnable::~IRunnable() {}
@@ -48,7 +51,10 @@ const char* TaskSystemParallelSpawn::name() {
     return "Parallel + Always Spawn";
 }
 
-TaskSystemParallelSpawn::TaskSystemParallelSpawn(int num_threads): ITaskSystem(num_threads) {
+TaskSystemParallelSpawn::TaskSystemParallelSpawn(int num_threads): ITaskSystem(num_threads), 
+    num_finished(0), 
+    num_running(0),
+    num_threads(num_threads) {
     //
     // TODO: CS149 student implementations may decide to perform setup
     // operations (such as thread pool construction) here.
@@ -59,6 +65,10 @@ TaskSystemParallelSpawn::TaskSystemParallelSpawn(int num_threads): ITaskSystem(n
 
 TaskSystemParallelSpawn::~TaskSystemParallelSpawn() {}
 
+void run(IRunnable* runnable, TaskID task_id, int num_total_tasks) {
+    runnable->runTask(task_id, num_total_tasks);
+}
+
 void TaskSystemParallelSpawn::run(IRunnable* runnable, int num_total_tasks) {
 
 
@@ -67,10 +77,13 @@ void TaskSystemParallelSpawn::run(IRunnable* runnable, int num_total_tasks) {
     // method in Part A.  The implementation provided below runs all
     // tasks sequentially on the calling thread.
     //
-
+    auto threads = std::make_unique<std::thread[]>(num_threads);
+    int num_running = 0;
     for (int i = 0; i < num_total_tasks; i++) {
-        runnable->runTask(i, num_total_tasks);
+        threads[num_running++] = std::thread(runnable, i, num_total_tasks);
     }
+
+    
 }
 
 TaskID TaskSystemParallelSpawn::runAsyncWithDeps(IRunnable* runnable, int num_total_tasks,
