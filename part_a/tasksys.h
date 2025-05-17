@@ -36,9 +36,6 @@ class TaskSystemParallelSpawn: public ITaskSystem {
                                 const std::vector<TaskID>& deps);
         void sync();
     private:
-        std::atomic_int num_running;
-        std::atomic_int num_finished;
-        
         int num_threads;
 };
 
