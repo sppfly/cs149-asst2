@@ -1,9 +1,6 @@
 #include "tasksys.h"
 #include <atomic>
 #include <cstdlib>
-#include <iostream>
-#include <memory>
-#include <stdexcept>
 #include <thread>
 #include <vector>
 #include "itasksys.h"
@@ -120,13 +117,31 @@ const char* TaskSystemParallelThreadPoolSpinning::name() {
 
 TaskSystemParallelThreadPoolSpinning::TaskSystemParallelThreadPoolSpinning(
     int num_threads)
-    : ITaskSystem(num_threads) {
+    : ITaskSystem(num_threads),
+      num_threads(num_threads),
+      threads(std::vector<std::thread>{}) {
     //
     // TODO: CS149 student implementations may decide to perform setup
     // operations (such as thread pool construction) here.
     // Implementations are free to add new class member variables
     // (requiring changes to tasksys.h).
     //
+
+    for (int i = 0; i < num_threads; i++) {
+        threads.emplace_back(
+            std::thread{[&num_finished = this->num_finished]() {
+                while (true) {
+                    if () {
+                        continue;
+                    }
+
+                    while () {
+                        _runnable->runTask(, );  
+                    }
+
+                }
+            }});
+    }
 }
 
 TaskSystemParallelThreadPoolSpinning::~TaskSystemParallelThreadPoolSpinning() {}
