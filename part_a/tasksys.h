@@ -64,6 +64,10 @@ class TaskSystemParallelThreadPoolSpinning: public ITaskSystem {
 
         IRunnable* _runnable;
         int _num_total_tasks;
+        bool has_task;
+
+        bool activated;
+
 };
 
 /*

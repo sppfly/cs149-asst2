@@ -119,32 +119,43 @@ TaskSystemParallelThreadPoolSpinning::TaskSystemParallelThreadPoolSpinning(
     int num_threads)
     : ITaskSystem(num_threads),
       num_threads(num_threads),
-      threads(std::vector<std::thread>{}) {
+      threads(std::vector<std::thread>{}),
+      has_task(false),
+      activated(true) {
     //
     // TODO: CS149 student implementations may decide to perform setup
     // operations (such as thread pool construction) here.
     // Implementations are free to add new class member variables
     // (requiring changes to tasksys.h).
     //
+    num_finished.store(0);
 
     for (int i = 0; i < num_threads; i++) {
-        threads.emplace_back(
-            std::thread{[&num_finished = this->num_finished]() {
-                while (true) {
-                    if () {
-                        continue;
-                    }
+        threads.emplace_back([this]() {
+            int last_finished = 0;
+            while (activated) {
 
-                    while () {
-                        _runnable->runTask(, );  
-                    }
-
+                if (!has_task || last_finished != 0) {
+                    continue;
                 }
-            }});
+
+                int current;
+                while ((current = num_finished.fetch_add(1)) <
+                       _num_total_tasks) {
+                    _runnable->runTask(current, _num_total_tasks);
+                }
+                last_finished = num_finished.load();
+            }
+        });
     }
 }
 
-TaskSystemParallelThreadPoolSpinning::~TaskSystemParallelThreadPoolSpinning() {}
+TaskSystemParallelThreadPoolSpinning::~TaskSystemParallelThreadPoolSpinning() {
+    activated = false;
+    for (auto& thread : threads) {
+        thread.join();
+    }
+}
 
 void TaskSystemParallelThreadPoolSpinning::run(IRunnable* runnable,
                                                int num_total_tasks) {
@@ -155,9 +166,20 @@ void TaskSystemParallelThreadPoolSpinning::run(IRunnable* runnable,
     // tasks sequentially on the calling thread.
     //
 
-    for (int i = 0; i < num_total_tasks; i++) {
-        runnable->runTask(i, num_total_tasks);
+    _runnable = runnable;
+    _num_total_tasks = num_total_tasks;
+    num_finished.store(0);
+
+    // at this time, other threads should know that he can start
+
+    while (num_finished.load() < num_total_tasks) {
+        std::this_thread::yield();
     }
+
+    has_task = false;
+
+    _runnable = nullptr;
+    _num_total_tasks = -1;
 }
 
 TaskID TaskSystemParallelThreadPoolSpinning::runAsyncWithDeps(
