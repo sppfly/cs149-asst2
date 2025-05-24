@@ -3,6 +3,7 @@
 
 #include "itasksys.h"
 #include <atomic>
+#include <mutex>
 #include <thread>
 #include <vector>
 
@@ -60,7 +61,9 @@ class TaskSystemParallelThreadPoolSpinning: public ITaskSystem {
         int num_threads;
         std::vector<std::thread> threads;
 
-        std::atomic_int num_finished;
+        int num_finished;
+        std::mutex mu;
+
 
         IRunnable* _runnable;
         int _num_total_tasks;
