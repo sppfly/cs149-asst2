@@ -1,8 +1,10 @@
 #include "tasksys.h"
 #include <atomic>
+#include <chrono>
 #include <cstdlib>
 #include <iostream>
 #include <mutex>
+#include <syncstream>
 #include <thread>
 #include <vector>
 #include "itasksys.h"
@@ -122,7 +124,9 @@ TaskSystemParallelThreadPoolSpinning::TaskSystemParallelThreadPoolSpinning(
     : ITaskSystem(num_threads),
       num_threads(num_threads),
       threads(std::vector<std::thread>{}),
-      has_task(false),
+      num_finished(std::atomic_int {0}),
+      _runnable(nullptr),
+      _num_total_tasks(-1),
       activated(true) {
     //
     // TODO: CS149 student implementations may decide to perform setup
@@ -130,33 +134,27 @@ TaskSystemParallelThreadPoolSpinning::TaskSystemParallelThreadPoolSpinning(
     // Implementations are free to add new class member variables
     // (requiring changes to tasksys.h).
     //
-    num_finished = 0;
     for (int i = 0; i < num_threads; i++) {
         threads.emplace_back([this]() {
             while (activated) {
-
-                if (!has_task) {
+                if (_runnable == nullptr) {
                     continue;
                 }
-                int current = -1;
-                while (true) {
-                    {
-                        std::scoped_lock lck {mu};
-                        if (num_finished >= _num_total_tasks) {
-                            break;
-                        }
-                        current = num_finished;
-                        ++num_finished;
-                    }
+                int current = 0;
+                while ((current = num_finished.fetch_add(1)) < _num_total_tasks) {
+                    // std::osyncstream(std::cout) << "run task for " << current << '\n';
                     _runnable->runTask(current, _num_total_tasks);
                 }
             }
+            // std::osyncstream(std::cout) << "this thread comes to the end: "
+                                        // << std::this_thread::get_id() << '\n';
         });
     }
 }
 
 TaskSystemParallelThreadPoolSpinning::~TaskSystemParallelThreadPoolSpinning() {
     activated = false;
+    // std::osyncstream(std::cout) << "destructor\n";
     for (auto& thread : threads) {
         thread.join();
     }
@@ -173,18 +171,15 @@ void TaskSystemParallelThreadPoolSpinning::run(IRunnable* runnable,
 
     _runnable = runnable;
     _num_total_tasks = num_total_tasks;
-    {
-        std::scoped_lock lck {mu};
-        num_finished = 0;
-    }
+    num_finished.store(0);
 
-    // at this time, other threads should know that he can start
 
     while (num_finished < num_total_tasks) {
-        std::this_thread::yield();
+        // std::this_thread::yield();
+        
     }
-    std::cout << "finished" << "\n"; 
-    has_task = false;
+
+    // std::osyncstream(std::cout) << "finish run\n";
 }
 
 TaskID TaskSystemParallelThreadPoolSpinning::runAsyncWithDeps(

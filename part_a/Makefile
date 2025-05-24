@@ -6,7 +6,7 @@ else
     CXX = g++ -m64
 endif
 
-CXXFLAGS=-I. -I../common -I../tests -Iobjs/ -O3 -std=c++20 -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Wsign-conversion -Wnull-dereference -Wnon-virtual-dtor -Wold-style-cast -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer
+CXXFLAGS=-I. -I../common -I../tests -Iobjs/ -O3 -std=c++20 -Wall -Wextra 
 
 
 
