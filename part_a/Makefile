@@ -6,7 +6,7 @@ else
     CXX = g++ -m64
 endif
 
-CXXFLAGS=-I. -I../common -I../tests -Iobjs/ -O3 -std=c++20 -Wall -Wextra 
+CXXFLAGS=-I. -I../common -I../tests -Iobjs/ -O2 -std=c++20 -Wall -Wextra 
 
 
 
