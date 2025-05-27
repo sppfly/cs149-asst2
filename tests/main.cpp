@@ -169,7 +169,7 @@ int main(int argc, char** argv)
                 // Create a new task system
                 ITaskSystem *t = selectTaskSystemRefImpl(num_threads, (TaskSystemType) i);
                 
-                printf("%d round\n", j);
+                // printf("%d round\n", j);
                 // Run test
                 TestResults result = test[test_id](t);
 
@@ -177,7 +177,7 @@ int main(int argc, char** argv)
                 if (!result.passed) {
                     printf("ERROR: Results did not pass correctness check! (iter=%d, ref_impl=%s)\n",
                         j, t->name());
-                    // exit(1);
+                    exit(1);
                 }
 
                 minT = std::min(minT, result.time);
@@ -188,7 +188,7 @@ int main(int argc, char** argv)
                 }
 
                 // Shutdown task system so each timing run is from a clean start
-                printf("should call destructor after\n");
+                // printf("should call destructor after\n");
                 delete t;
             }
         }

@@ -90,8 +90,7 @@ class TaskSystemParallelThreadPoolSleeping: public ITaskSystem {
     private:
         std::mutex mu;
         std::condition_variable cv;
-
-        int num_finished;
+        std::atomic_int num_finished;
         
         int num_threads;
         std::vector<std::thread> threads;
@@ -101,7 +100,6 @@ class TaskSystemParallelThreadPoolSleeping: public ITaskSystem {
         
         bool has_work;
         bool work_finished;
-
         bool activated;
 };
 
