@@ -1,14 +1,14 @@
 [
   {
     "arguments": [
-      "/usr/sbin/g++",
+      "/usr/bin/g++",
       "-m64",
       "-I.",
       "-I../common",
       "-I../tests",
       "-Iobjs/",
       "-O2",
-      "-std=c++20",
+      "-std=c++23",
       "-Wall",
       "-Wextra",
       "-c",
@@ -16,20 +16,20 @@
       "objs/ppm.o",
       "../common/ppm.cpp"
     ],
-    "directory": "/mnt/wsl/PHYSICALDRIVE1p1/projects/cs149/asst2/part_a",
-    "file": "/mnt/wsl/PHYSICALDRIVE1p1/projects/cs149/asst2/common/ppm.cpp",
-    "output": "/mnt/wsl/PHYSICALDRIVE1p1/projects/cs149/asst2/part_a/objs/ppm.o"
+    "directory": "/data/projects/cs149/asst2/part_a",
+    "file": "/data/projects/cs149/asst2/common/ppm.cpp",
+    "output": "/data/projects/cs149/asst2/part_a/objs/ppm.o"
   },
   {
     "arguments": [
-      "/usr/sbin/g++",
+      "/usr/bin/g++",
       "-m64",
       "-I.",
       "-I../common",
       "-I../tests",
       "-Iobjs/",
       "-O2",
-      "-std=c++20",
+      "-std=c++23",
       "-Wall",
       "-Wextra",
       "-c",
@@ -37,13 +37,13 @@
       "objs/tasksys.o",
       "tasksys.cpp"
     ],
-    "directory": "/mnt/wsl/PHYSICALDRIVE1p1/projects/cs149/asst2/part_a",
-    "file": "/mnt/wsl/PHYSICALDRIVE1p1/projects/cs149/asst2/part_a/tasksys.cpp",
-    "output": "/mnt/wsl/PHYSICALDRIVE1p1/projects/cs149/asst2/part_a/objs/tasksys.o"
+    "directory": "/data/projects/cs149/asst2/part_a",
+    "file": "/data/projects/cs149/asst2/part_a/tasksys.cpp",
+    "output": "/data/projects/cs149/asst2/part_a/objs/tasksys.o"
   },
   {
     "arguments": [
-      "/usr/sbin/g++",
+      "/usr/bin/g++",
       "-c",
       "-m64",
       "-I.",
@@ -51,7 +51,7 @@
       "-I../tests",
       "-Iobjs/",
       "-O2",
-      "-std=c++20",
+      "-std=c++23",
       "-Wall",
       "-Wextra",
       "objs/tasksys.o",
@@ -59,8 +59,8 @@
       "runtasks",
       "../tests/main.cpp"
     ],
-    "directory": "/mnt/wsl/PHYSICALDRIVE1p1/projects/cs149/asst2/part_a",
-    "file": "/mnt/wsl/PHYSICALDRIVE1p1/projects/cs149/asst2/tests/main.cpp",
-    "output": "/mnt/wsl/PHYSICALDRIVE1p1/projects/cs149/asst2/part_a/runtasks"
+    "directory": "/data/projects/cs149/asst2/part_a",
+    "file": "/data/projects/cs149/asst2/tests/main.cpp",
+    "output": "/data/projects/cs149/asst2/part_a/runtasks"
   }
 ]

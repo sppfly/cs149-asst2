@@ -1,11 +1,8 @@
 #include "tasksys.h"
 #include <atomic>
-#include <chrono>
 #include <condition_variable>
-#include <cstdlib>
-#include <iostream>
 #include <mutex>
-#include <syncstream>
+#include <print>
 #include <thread>
 #include <vector>
 #include "itasksys.h"
@@ -199,7 +196,8 @@ TaskSystemParallelThreadPoolSleeping::TaskSystemParallelThreadPoolSleeping(
     int num_threads)
     : ITaskSystem(num_threads),
       mu(std::mutex{}),
-      cv(std::condition_variable{}),
+      start_cv(std::condition_variable{}),
+      finish_cv(std::condition_variable{}),
       num_finished(std::atomic_int{0}),
 
       num_threads(num_threads),
@@ -209,8 +207,7 @@ TaskSystemParallelThreadPoolSleeping::TaskSystemParallelThreadPoolSleeping(
       _num_total_tasks(-1),
 
       has_work(false),
-      work_finished(false),
-      activated(true) {
+      shutdown(false) {
     //
     // TODO: CS149 student implementations may decide to perform setup
     // operations (such as thread pool construction) here.
@@ -220,34 +217,33 @@ TaskSystemParallelThreadPoolSleeping::TaskSystemParallelThreadPoolSleeping(
 
     for (int i = 0; i < num_threads; i++) {
         threads.emplace_back([this]() {
-            while (activated) {
+            while (true) {
                 {
                     std::unique_lock<std::mutex> lck{mu};
-                    if (!has_work || activated) {
-                        cv.wait(lck, [this] { return has_work || !activated; });
-                    }
-                    if (!activated) {
+                    start_cv.wait(lck, [this] { return has_work || shutdown; });
+                    if (shutdown) {
                         break;
                     }
+                }
+                if (num_finished > _num_total_tasks) {
+                    // check this because a worker thread may comes here even it has finished the work, but the main thread
+                    // has not set has_work to false
+                    continue;
                 }
                 int current = 0;
                 while ((current = num_finished.fetch_add(1)) <
                        _num_total_tasks) {
-                    std::cout << "running task " << current << " total " << _num_total_tasks << '\n';
                     _runnable->runTask(current, _num_total_tasks);
                 }
 
                 {
-                    std::scoped_lock<std::mutex> lck{mu};
-                    std::cout << "finished for " << num_finished.load() << '\n';
-                    has_work = false;
+                    std::unique_lock<std::mutex> lck{mu};
+                    if (!work_finished) {
+                        // this thread is the first worker to notify main thread
+                        work_finished = true;
+                    }
+                    finish_cv.notify_one();
                 }
-
-                // {
-                //     std::unique_lock<std::mutex> lck{mu};
-                //     work_finished = true;
-                // }
-                // cv.notify_all();
             }
         });
     }
@@ -262,9 +258,9 @@ TaskSystemParallelThreadPoolSleeping::~TaskSystemParallelThreadPoolSleeping() {
     //
     {
         std::scoped_lock<std::mutex> lck{mu};
-        activated = false;
+        shutdown = true;
     }
-    cv.notify_all();
+    start_cv.notify_all();
     for (auto& thread : threads) {
         thread.join();
     }
@@ -283,18 +279,21 @@ void TaskSystemParallelThreadPoolSleeping::run(IRunnable* runnable,
         std::scoped_lock<std::mutex> lck{mu};
         _runnable = runnable;
         _num_total_tasks = num_total_tasks;
-        has_work = true;
+        num_finished = 0;
         work_finished = false;
+        has_work = true;
     }
-    cv.notify_all();
+    start_cv.notify_all();
 
-    while (num_finished.load() < num_total_tasks) {
-        std::this_thread::yield();
-    }
-
-    {
-        std::scoped_lock<std::mutex> lck{mu};
-        has_work = false;
+    int finished_threads = 0;
+    while (true) {
+        std::unique_lock<std::mutex> lck{mu};
+        finish_cv.wait(lck, [this] { return work_finished; });
+        ++finished_threads;
+        if (finished_threads >= num_threads) {
+            has_work = false;
+            break;
+        }
     }
 }
 

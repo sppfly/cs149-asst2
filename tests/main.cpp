@@ -166,6 +166,11 @@ int main(int argc, char** argv)
             double minT = 1e30;
             for (int j = 0; j < num_timing_iterations; j++) {
 
+                if (i == PARALLEL_THREAD_POOL_SPINNING)
+                {
+                    continue;
+                }
+                
                 // Create a new task system
                 ITaskSystem *t = selectTaskSystemRefImpl(num_threads, (TaskSystemType) i);
                 
