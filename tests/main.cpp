@@ -165,16 +165,10 @@ int main(int argc, char** argv)
         for (int i = 0; i < N_TASKSYS_IMPLS; i++) {
             double minT = 1e30;
             for (int j = 0; j < num_timing_iterations; j++) {
-
-                if (i == PARALLEL_THREAD_POOL_SPINNING)
-                {
-                    continue;
-                }
                 
                 // Create a new task system
                 ITaskSystem *t = selectTaskSystemRefImpl(num_threads, (TaskSystemType) i);
                 
-                // printf("%d round\n", j);
                 // Run test
                 TestResults result = test[test_id](t);
 
@@ -192,8 +186,6 @@ int main(int argc, char** argv)
                     printf("[%s]:\t\t[%.3f] ms\n", t->name(), minT * 1000);
                 }
 
-                // Shutdown task system so each timing run is from a clean start
-                // printf("should call destructor after\n");
                 delete t;
             }
         }

@@ -3,3 +3,21 @@
 need several varibles
 1. finished tasks
 2. running tasks
+
+
+
+## TaskSystemParallelThreadPoolSpinning
+As said in the hand out, it is not trivial to know when is all works done. 
+
+Some proposed solution: 
+1. use `num_finished`, when `num_finished` is larger than 
+
+
+
+
+
+
+Final solution:
+Use two variable, `num_started` for running tasks
+
+Then use `num_finished` for checking if everything is finished

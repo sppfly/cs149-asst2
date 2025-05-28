@@ -62,14 +62,16 @@ class TaskSystemParallelThreadPoolSpinning: public ITaskSystem {
         int num_threads;
         std::vector<std::thread> threads;
 
+
         std::atomic_int num_finished;
+        std::atomic_int num_started;
 
         IRunnable* _runnable;
         int _num_total_tasks;
 
+        std::mutex mu;
 
-        bool activated;
-
+        bool shutdown;
 };
 
 /*
@@ -91,6 +93,8 @@ class TaskSystemParallelThreadPoolSleeping: public ITaskSystem {
         std::mutex mu;
         std::condition_variable start_cv;
         std::condition_variable finish_cv;
+        
+        std::atomic_int num_started;
         std::atomic_int num_finished;
         
         int num_threads;
