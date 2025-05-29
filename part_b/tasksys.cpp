@@ -1,10 +1,10 @@
 
 #include "tasksys.h"
+#include <algorithm>
 #include <atomic>
 #include <condition_variable>
 #include <cstdio>
 #include <mutex>
-#include <print>
 #include <thread>
 #include <vector>
 #include "itasksys.h"
@@ -231,7 +231,6 @@ TaskSystemParallelThreadPoolSleeping::TaskSystemParallelThreadPoolSleeping(
       mu(std::mutex{}),
       start_cv(std::condition_variable{}),
       finish_cv(std::condition_variable{}),
-      num_finished(std::atomic_int{0}),
 
       num_threads(num_threads),
       threads(std::vector<std::thread>{}),
@@ -247,28 +246,63 @@ TaskSystemParallelThreadPoolSleeping::TaskSystemParallelThreadPoolSleeping(
     // Implementations are free to add new class member variables
     // (requiring changes to tasksys.h).
     //
+    
+    
+   
+   
+    daemon = std::thread {[this]() {
+        while (true) {
+            {
+                std::scoped_lock<std::mutex> lck {mu};
+                if (shutdown) {
+                    break;
+                }
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+    }};
+    
+    
+    
+    
+    
+    
 
     for (int i = 0; i < num_threads; i++) {
         threads.emplace_back([this]() {
             while (true) {
                 {
-                    std::unique_lock<std::mutex> lck{mu};
-                    start_cv.wait(lck, [this] { return has_work || shutdown; });
-                    if (shutdown) {
-                        break;
+                    // std::unique_lock<std::mutex> lck{mu};
+                    // start_cv.wait(lck, [this] { return shutdown; });
+                    // if (shutdown) {
+                    //     break;
+                    // }
+                }
+                int current;
+                // possible optimization here, use atomic instead of mutex
+                IRunnable* runnable;
+                int num_total_tasks;
+                {
+                    std::scoped_lock<std::mutex> lck {mu};
+                    if (!ready_tasks.empty()) {
+                        auto it = std::ranges::find_if(ready_tasks, [](Task task) {
+                            return task.num_started < task.num_total_tasks;
+                        });
+                        if (it == ready_tasks.end()) {
+                            // this is an extreme condition when all tasks are running
+                            continue;
+                        }
+                        Task& task = *it; 
+                        current = task.num_started;
+                        task.num_started++;
+                        runnable = task.runnable;
+                        num_total_tasks = task.num_total_tasks;
                     }
                 }
-                if (num_finished > _num_total_tasks) {
-                    // check this because a worker thread may comes here even it has finished the work, but the main thread
-                    // has not set has_work to false
-                    continue;
-                }
-                int current = 0;
-                while ((current = num_started.fetch_add(1)) <
-                       _num_total_tasks) {
-                    _runnable->runTask(current, _num_total_tasks);
-                    num_finished.fetch_add(1);
-                }
+                
+                runnable->runTask(current, num_total_tasks);
+                
+                
 
             }
         });
@@ -300,26 +334,25 @@ void TaskSystemParallelThreadPoolSleeping::run(IRunnable* runnable,
     // tasks sequentially on the calling thread.
     //
 
-    {
-        std::scoped_lock<std::mutex> lck{mu};
-        _runnable = runnable;
-        _num_total_tasks = num_total_tasks;
-        num_finished = 0;
-        num_started = 0;
-        work_finished = false;
-        has_work = true;
-    }
-    start_cv.notify_all();
+    // {
+    //     std::scoped_lock<std::mutex> lck{mu};
+    //     _runnable = runnable;
+    //     _num_total_tasks = num_total_tasks;
+    //     num_finished = 0;
+    //     work_finished = false;
+    //     has_work = true;
+    // }
+    // start_cv.notify_all();
 
-    while (num_finished < _num_total_tasks) {
-        // TODO: somehow if I all this sleep it will not work, WHY?
-        // std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    }
+    // while (num_finished < _num_total_tasks) {
+    //     // TODO: somehow if I all this sleep it will not work, WHY?
+    //     // std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    // }
 
-    {
-        std::scoped_lock<std::mutex> lck {mu};
-        has_work = false;
-    }
+    // {
+    //     std::scoped_lock<std::mutex> lck {mu};
+    //     has_work = false;
+    // }
 }
 
 TaskID TaskSystemParallelThreadPoolSleeping::runAsyncWithDeps(
@@ -328,8 +361,13 @@ TaskID TaskSystemParallelThreadPoolSleeping::runAsyncWithDeps(
     //
     // TODO: CS149 students will implement this method in Part B.
     //
-
-    return 0;
+    std::scoped_lock<std::mutex> lck {mu};
+    TaskID task_id = next_task_id;
+    next_task_id += 1;
+    // some optimizition possible here, we are copying memory  
+    Task task = Task {.id=task_id, .runnable=runnable, .num_total_tasks=num_total_tasks};
+    waiting_tasks.emplace_back(WaitTask{.waiting_for=deps, .task=task});
+    return task_id;
 }
 
 void TaskSystemParallelThreadPoolSleeping::sync() {

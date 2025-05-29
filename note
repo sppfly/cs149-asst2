@@ -21,3 +21,15 @@ Final solution:
 Use two variable, `num_started` for running tasks
 
 Then use `num_finished` for checking if everything is finished
+
+
+
+
+
+
+the working thread should be very simple:
+```
+while True:
+    if task availble:
+        run the task
+```

@@ -5,7 +5,9 @@
 #include "itasksys.h"
 #include <atomic>
 #include <condition_variable>
+#include <deque>
 #include <mutex>
+#include <queue>
 #include <thread>
 #include <vector>
 
@@ -75,6 +77,21 @@ class TaskSystemParallelThreadPoolSpinning: public ITaskSystem {
         bool shutdown;
 };
 
+
+struct Task {
+    TaskID id;
+    IRunnable* runnable;
+    int num_total_tasks;
+    
+    int num_started;
+    int num_finished;
+};
+
+struct WaitTask {
+    std::vector<TaskID> waiting_for;
+    Task task;
+};
+
 /*
  * TaskSystemParallelThreadPoolSleeping: This class is the student's
  * optimized implementation of a parallel task execution engine that uses
@@ -95,11 +112,18 @@ class TaskSystemParallelThreadPoolSleeping: public ITaskSystem {
         std::condition_variable start_cv;
         std::condition_variable finish_cv;
         
-        std::atomic_int num_started;
-        std::atomic_int num_finished;
+        
+        
+        
+        TaskID next_task_id;
+        std::vector<WaitTask> waiting_tasks;
+        std::deque<Task> ready_tasks;
+        std::vector<Task> running_tasks;
         
         int num_threads;
         std::vector<std::thread> threads;
+        
+        std::thread daemon;
 
         IRunnable* _runnable;
         int _num_total_tasks;
